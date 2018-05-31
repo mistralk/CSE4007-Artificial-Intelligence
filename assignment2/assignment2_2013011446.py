@@ -18,10 +18,6 @@ def main():
 
     simmat = word2vec(embedding, 0.5, cosine_sim)
 
-    for word1 in embedding:
-        for word2 in embedding:
-            print(simmat[word1])
-
     for word in embedding:
         fout.write(word)
         fout.write(original_input[word])
@@ -31,8 +27,9 @@ def main():
     fout.close()
     
 def word2vec(embedding, threshold, sim):
-    ranks = []
+    #ranks = []
     simmat = dict()
+    clusters = dict()
     
     for word1 in embedding:
         a = embedding[word1]
@@ -40,21 +37,47 @@ def word2vec(embedding, threshold, sim):
         for word2 in embedding:
             # build sim matrix
             if word1 == word2:
-                simrow[word2] = 0.0
+                simrow[(word2)] = 0.0
                 continue
-            pair = set([word1, word2])
+            #pair = set([word1, word2])
             b = embedding[word2]
-            simrow[word2] = sim(a, b)
+            simrow[(word2)] = sim(a, b)
             
-            ranks.append([pair, simrow[word2]])
-        simmat[word1] = simrow
+            #ranks.append([pair, simrow[word2]])
+        simmat[(word1)] = simrow
     
-    sorted(ranks, key=lambda x: x[1])
-    reversed(ranks)
-    print(ranks)
-    out.close()
+    #sorted(ranks, key=lambda x: x[1])
+    #reversed(ranks)
+
+    while simmat.len() > 1:
+        max_sim = 0.0
+        max_a = ()
+        max_b = ()
+        for row in simmat:
+            key_max = max(row.keys(), key=(lambda k: row[k]))
+            if row[key_max] > max_sim :
+                max_sim = row[key_max]
+                max_a = row
+                max_b = key_max
+
+        clustered = merge_tuple(max_a, max_b)
+
+        clusteres[clustered] = simmat[max_a][max_b]
+        simrow = dict()
+        for k in simrow.keys() :
+            simrow[k] = min(simmat[max_a][k], simmat[max_b][k])
+        simmat[clustered] = simrow
+
+        del simmat[max_a][max_b]
+        del simmat[max_b][max_a]
+        del simmat[max_a]
+        del simmat[max_b]
+    
+
     return simmat
 
+def merge_tuple(a, b):
+    return tuple(sorted(list(a + b)))
     
 def cosine_sim(a, b):
     return dot(a, b) / (norm(a) * norm(b))
